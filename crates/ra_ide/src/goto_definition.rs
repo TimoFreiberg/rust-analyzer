@@ -283,6 +283,27 @@ mod tests {
     }
 
     #[test]
+    fn goto_def_for_macro_defined_type() {
+        check_goto(
+            "
+            //- /lib.rs
+            macro_rules! define_type {
+                ($name: ident) => (struct $name(String);)
+            }
+
+            define_type!(Foo);
+
+            struct Bar {
+                foo: <|>Foo
+            }
+            ",
+            "Foo STRUCT_DEF FileId(1) [75; 93) [88; 91)",
+            "define_type!(Foo);|Foo"
+        );
+        assert!(false)
+    }
+
+    #[test]
     fn goto_def_for_macro_defined_fn_no_arg() {
         check_goto(
             "

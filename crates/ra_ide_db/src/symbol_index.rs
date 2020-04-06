@@ -29,6 +29,7 @@ use std::{
 };
 
 use fst::{self, Streamer};
+use hir::Semantics;
 use ra_db::{
     salsa::{self, ParallelDatabase},
     FileId, SourceDatabaseExt, SourceRootId,
@@ -101,9 +102,10 @@ pub trait SymbolsDatabase: hir::db::HirDatabase {
 
 fn file_symbols(db: &impl SymbolsDatabase, file_id: FileId) -> Arc<SymbolIndex> {
     db.check_canceled();
-    let parse = db.parse(file_id);
+    let sema = Semantics::new(db);
+    let parse = sema.parse(file_id);
 
-    let symbols = source_file_to_file_symbols(&parse.tree(), file_id);
+    let symbols = source_file_to_file_symbols_with_macro_expansion(&sema, parse.syntax(), file_id);
 
     // FIXME: add macros here
 
@@ -344,6 +346,47 @@ fn source_file_to_file_symbols(source_file: &SourceFile, file_id: FileId) -> Vec
     symbols
 }
 
+fn source_file_to_file_symbols_with_macro_expansion(
+    sema: &Semantics<impl SymbolsDatabase>,
+    source_file: &SyntaxNode,
+    file_id: FileId,
+) -> Vec<FileSymbol> {
+    let mut symbols = Vec::new();
+    let mut stack = Vec::new();
+
+    for event in source_file.preorder() {
+        match event {
+            WalkEvent::Enter(node) => {
+                let mut new_symbols =
+                    to_file_symbol_with_macro_expansion(sema, &node, file_id, stack.last());
+                match new_symbols.as_mut_slice() {
+                    [] => {}
+                    [sym] => {
+                        sym.container_name = stack.last().cloned();
+                        stack.push(sym.name.clone());
+                    }
+                    [syms @ ..] => {
+                        let last_symbol = stack.last();
+                        for sym in syms {
+                            sym.container_name = last_symbol.cloned();
+                        }
+                    }
+                }
+                symbols.extend(new_symbols);
+            }
+
+            WalkEvent::Leave(node) => {
+                if to_symbol_with_macro_expansion(sema, &node, file_id, None).len() == 1 {
+                    stack.pop();
+                }
+            }
+        }
+    }
+    dbg!(&symbols);
+
+    symbols
+}
+
 fn to_symbol(node: &SyntaxNode) -> Option<(SmolStr, SyntaxNodePtr, TextRange)> {
     fn decl<N: NameOwner>(node: N) -> Option<(SmolStr, SyntaxNodePtr, TextRange)> {
         let name = node.name()?;
@@ -375,6 +418,64 @@ fn to_symbol(node: &SyntaxNode) -> Option<(SmolStr, SyntaxNodePtr, TextRange)> {
     }
 }
 
+fn to_symbol_with_macro_expansion(
+    sema: &Semantics<impl SymbolsDatabase>,
+    node: &SyntaxNode,
+    file_id: FileId,
+    previous_container: Option<&SmolStr>,
+) -> Vec<FileSymbol> {
+    fn decl<N: NameOwner>(node: N, file_id: FileId) -> Vec<FileSymbol> {
+        let name = if let Some(name) = node.name() { name } else { return vec![] };
+        let name_range = name.syntax().text_range();
+        let name = name.text().clone();
+        let ptr = SyntaxNodePtr::new(node.syntax());
+        vec![FileSymbol { name, ptr, file_id, name_range: Some(name_range), container_name: None }]
+    }
+    match_ast! {
+        match node {
+            ast::FnDef(it) => decl(it, file_id),
+            ast::StructDef(it) => decl(it, file_id),
+            ast::EnumDef(it) => decl(it, file_id),
+            ast::TraitDef(it) => decl(it, file_id),
+            ast::Module(it) => decl(it, file_id),
+            ast::TypeAliasDef(it) => decl(it, file_id),
+            ast::ConstDef(it) => decl(it, file_id),
+            ast::StaticDef(it) => decl(it, file_id),
+            ast::MacroCall(it) => {
+                dbg!(&it);
+                if it.is_macro_rules().is_some() {
+                    decl(it, file_id)
+                } else {
+                    let symbols = symbols_in_expanded_macro(&sema, &it, file_id, previous_container);
+                    symbols
+                }
+            },
+            _ => vec![]
+        }
+    }
+}
+
+fn symbols_in_expanded_macro(
+    sema: &Semantics<impl SymbolsDatabase>,
+    macro_call: &ast::MacroCall,
+    file_id: FileId,
+    previous_container: Option<&SmolStr>,
+) -> Vec<FileSymbol> {
+    let expanded = match sema.expand(macro_call) {
+        None => return vec![],
+        Some(x) => x,
+    };
+    let mut macro_symbols =
+        source_file_to_file_symbols_with_macro_expansion(sema, &expanded, file_id);
+    for sym in &mut macro_symbols {
+        if sym.container_name.is_none() {
+            sym.container_name = previous_container.cloned();
+        }
+        // sym.ptr = SyntaxNodePtr::new(macro_call.syntax());
+    }
+    macro_symbols
+}
+
 fn to_file_symbol(node: &SyntaxNode, file_id: FileId) -> Option<FileSymbol> {
     to_symbol(node).map(move |(name, ptr, name_range)| FileSymbol {
         name,
@@ -384,4 +485,13 @@ fn to_file_symbol(node: &SyntaxNode, file_id: FileId) -> Option<FileSymbol> {
         name_range: Some(name_range),
         container_name: None,
     })
+}
+
+fn to_file_symbol_with_macro_expansion(
+    sema: &Semantics<impl SymbolsDatabase>,
+    node: &SyntaxNode,
+    file_id: FileId,
+    previous_container: Option<&SmolStr>,
+) -> Vec<FileSymbol> {
+    to_symbol_with_macro_expansion(sema, node, file_id, previous_container)
 }

@@ -646,6 +646,7 @@ impl DefCollector<'_> {
     ) {
         let file_id: HirFileId = macro_call_id.as_file();
         let raw_items = self.db.raw_items(file_id);
+
         let mod_dir = self.mod_dirs[&module_id].clone();
         ModCollector {
             def_collector: &mut *self,

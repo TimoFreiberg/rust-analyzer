@@ -808,4 +808,41 @@ fn main() {
             ",
         )
     }
+
+    #[test]
+    fn macro_defined_type_import() {
+        check_assist(
+            auto_import,
+            r"
+            mod types {
+                macro_rules! define_type {
+                    ($t:ident) => {
+                        struct $t;
+                    }
+                }
+
+                define_type!(DefinedFromMacro);
+            }
+            fn main() {
+                DefinedFromMacro<|>;
+            }
+            ",
+            r"
+            use types::DefinedFromMacro;
+
+            mod types {
+                macro_rules! define_type {
+                    ($t:ident) => {
+                        struct $t;
+                    }
+                }
+
+                define_type!(DefinedFromMacro);
+            }
+            fn main() {
+                DefinedFromMacro<|>;
+            }
+            ",
+        )
+    }
 }
