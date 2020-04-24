@@ -88,9 +88,7 @@ pub(crate) fn convert_to_guarded_return(ctx: AssistCtx) -> Option<Assist> {
         _ => return None,
     };
 
-    if then_block.syntax().first_child_or_token().map(|t| t.kind() == L_CURLY).is_none() {
-        return None;
-    }
+    then_block.syntax().first_child_or_token().map(|t| t.kind() == L_CURLY)?;
 
     then_block.syntax().last_child_or_token().filter(|t| t.kind() == R_CURLY)?;
     let cursor_position = ctx.frange.range.start();

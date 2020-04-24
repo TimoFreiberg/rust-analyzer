@@ -260,7 +260,7 @@ impl<'a> TtIter<'a> {
             | ('|', '=', None)
             | ('|', '|', None) => {
                 let tt2 = self.next().unwrap().clone();
-                Ok(tt::Subtree { delimiter: None, token_trees: vec![tt.clone(), tt2] }.into())
+                Ok(tt::Subtree { delimiter: None, token_trees: vec![tt, tt2] }.into())
             }
             _ => Ok(tt),
         }
@@ -331,7 +331,7 @@ impl<'a> TtIter<'a> {
             }
         }
         self.inner = self.inner.as_slice()[res.len()..].iter();
-        if res.len() == 0 && err.is_none() {
+        if res.is_empty() && err.is_none() {
             err = Some(err!("no tokens consumed"));
         }
         let res = match res.len() {
@@ -442,13 +442,12 @@ fn match_meta_var(kind: &str, input: &mut TtIter) -> ExpandResult<Option<Fragmen
                     .map(|ident| Some(tt::Leaf::from(ident.clone()).into()))
                     .map_err(|()| err!("expected ident")),
                 "tt" => input.expect_tt().map(Some).map_err(|()| err!()),
-                "lifetime" => input
-                    .expect_lifetime()
-                    .map(|tt| Some(tt))
-                    .map_err(|()| err!("expected lifetime")),
+                "lifetime" => {
+                    input.expect_lifetime().map(Some).map_err(|()| err!("expected lifetime"))
+                }
                 "literal" => input
                     .expect_literal()
-                    .map(|literal| Some(tt::Leaf::from(literal.clone()).into()))
+                    .map(|literal| Some(literal.clone().into()))
                     .map_err(|()| err!()),
                 // `vis` is optional
                 "vis" => match input.eat_vis() {

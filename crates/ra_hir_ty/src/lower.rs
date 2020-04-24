@@ -274,7 +274,7 @@ impl Ty {
         let ty = match resolution {
             TypeNs::TraitId(trait_) => {
                 // if this is a bare dyn Trait, we'll directly put the required ^0 for the self type in there
-                let self_ty = if remaining_segments.len() == 0 {
+                let self_ty = if remaining_segments.is_empty() {
                     Some(Ty::Bound(BoundVar::new(DebruijnIndex::INNERMOST, 0)))
                 } else {
                     None

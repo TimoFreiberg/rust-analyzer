@@ -232,13 +232,10 @@ mod tests {
         subtree
             .token_trees
             .push(TokenTree::Leaf(Ident { text: "Foo".into(), id: TokenId(1) }.into()));
-        subtree.token_trees.push(TokenTree::Subtree(
-            Subtree {
-                delimiter: Some(Delimiter { id: TokenId(2), kind: DelimiterKind::Brace }),
-                token_trees: vec![],
-            }
-            .into(),
-        ));
+        subtree.token_trees.push(TokenTree::Subtree(Subtree {
+            delimiter: Some(Delimiter { id: TokenId(2), kind: DelimiterKind::Brace }),
+            token_trees: vec![],
+        }));
         subtree
     }
 
@@ -257,7 +254,7 @@ mod tests {
 
         assert_eq!(task.macro_body, back.macro_body);
 
-        let result = ExpansionResult { expansion: tt.clone() };
+        let result = ExpansionResult { expansion: tt };
         let json = serde_json::to_string(&result).unwrap();
         let back: ExpansionResult = serde_json::from_str(&json).unwrap();
 

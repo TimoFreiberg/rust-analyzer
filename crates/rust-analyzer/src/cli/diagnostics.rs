@@ -37,32 +37,32 @@ pub fn diagnostics(
         for file_id in db.source_root(source_root_id).walk() {
             // Filter out files which are not actually modules (unless `--all` flag is
             // passed). In the rust-analyzer repository this filters out the parser test files.
-            if semantics.to_module_def(file_id).is_some() || all {
-                if !visited_files.contains(&file_id) {
-                    let crate_name = if let Some(module) = semantics.to_module_def(file_id) {
-                        if let Some(name) = module.krate().display_name(db) {
-                            format!("{}", name)
-                        } else {
-                            String::from("unknown")
-                        }
+            if (semantics.to_module_def(file_id).is_some() || all)
+                && !visited_files.contains(&file_id)
+            {
+                let crate_name = if let Some(module) = semantics.to_module_def(file_id) {
+                    if let Some(name) = module.krate().display_name(db) {
+                        format!("{}", name)
                     } else {
                         String::from("unknown")
-                    };
-                    println!(
-                        "processing crate: {}, module: {}",
-                        crate_name,
-                        db.file_relative_path(file_id)
-                    );
-                    for diagnostic in analysis.diagnostics(file_id).unwrap() {
-                        if matches!(diagnostic.severity, Severity::Error) {
-                            found_error = true;
-                        }
-
-                        println!("{:?}", diagnostic);
+                    }
+                } else {
+                    String::from("unknown")
+                };
+                println!(
+                    "processing crate: {}, module: {}",
+                    crate_name,
+                    db.file_relative_path(file_id)
+                );
+                for diagnostic in analysis.diagnostics(file_id).unwrap() {
+                    if matches!(diagnostic.severity, Severity::Error) {
+                        found_error = true;
                     }
 
-                    visited_files.insert(file_id);
+                    println!("{:?}", diagnostic);
                 }
+
+                visited_files.insert(file_id);
             }
         }
     }

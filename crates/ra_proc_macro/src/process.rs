@@ -90,15 +90,13 @@ impl ProcMacroProcessSrv {
             }
             Some(it) => it,
         };
-        sender.send(Task { req: req.into(), result_tx }).unwrap();
+        sender.send(Task { req, result_tx }).unwrap();
         let res = result_rx
             .recv()
             .map_err(|_| ra_tt::ExpansionError::Unknown("Proc macro thread is closed.".into()))?;
 
         match res {
-            Some(Response::Error(err)) => {
-                return Err(ra_tt::ExpansionError::ExpansionError(err.message));
-            }
+            Some(Response::Error(err)) => Err(ra_tt::ExpansionError::ExpansionError(err.message)),
             Some(res) => Ok(res.try_into().map_err(|err| {
                 ra_tt::ExpansionError::Unknown(format!(
                     "Fail to get response, reason : {:#?} ",

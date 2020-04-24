@@ -75,9 +75,7 @@ fn deref_by_trait(
             environment: ty.environment.clone(),
         },
     };
-    if db.trait_solve(krate, implements_goal).is_none() {
-        return None;
-    }
+    db.trait_solve(krate, implements_goal)?;
 
     // Now do the assoc type projection
     let projection = super::traits::ProjectionPredicate {

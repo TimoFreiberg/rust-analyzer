@@ -270,7 +270,7 @@ pub fn token(kind: SyntaxKind) -> SyntaxToken {
 }
 
 pub fn unreachable_macro_call() -> ast::MacroCall {
-    ast_from_text(&format!("unreachable!()"))
+    ast_from_text("unreachable!()")
 }
 
 pub fn param(name: String, ty: String) -> ast::Param {

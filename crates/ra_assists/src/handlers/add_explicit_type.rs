@@ -46,9 +46,7 @@ pub(crate) fn add_explicit_type(ctx: AssistCtx) -> Option<Assist> {
     // and it has no placeholders
     let ascribed_ty = stmt.ascribed_type();
     if let Some(ref ty) = ascribed_ty {
-        if ty.syntax().descendants().find_map(ast::PlaceholderType::cast).is_none() {
-            return None;
-        }
+        ty.syntax().descendants().find_map(ast::PlaceholderType::cast)?;
     }
     // Infer type
     let ty = ctx.sema.type_of_expr(&expr)?;

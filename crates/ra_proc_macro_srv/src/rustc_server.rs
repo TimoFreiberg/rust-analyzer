@@ -399,7 +399,7 @@ impl server::Group for Rustc {
     }
 
     fn span(&mut self, group: &Self::Group) -> Self::Span {
-        group.delimiter.map(|it| it.id).unwrap_or_else(|| tt::TokenId::unspecified())
+        group.delimiter.map(|it| it.id).unwrap_or_else(tt::TokenId::unspecified)
     }
 
     fn set_span(&mut self, _group: &mut Self::Group, _span: Self::Span) {
