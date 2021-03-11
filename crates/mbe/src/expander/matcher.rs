@@ -68,7 +68,7 @@ use crate::{
 
 use super::ExpandResult;
 use parser::FragmentKind::*;
-use smallvec::{smallvec, SmallVec};
+use smallvec::SmallVec;
 use syntax::SmolStr;
 
 impl Bindings {
@@ -187,7 +187,7 @@ struct MatchState<'t> {
     sep_parsed: Option<usize>,
 
     /// Matched meta variables bindings
-    bindings: SmallVec<[Bindings; 4]>,
+    bindings: Vec<Bindings>,
 
     /// Cached result of meta variable parsing
     meta_result: Option<(TtIter<'t>, ExpandResult<Option<Fragment>>)>,
@@ -314,7 +314,7 @@ fn match_loop_inner<'t>(
                     sep: separator.clone(),
                     sep_kind: Some(*kind),
                     sep_parsed: None,
-                    bindings: smallvec![Bindings::default()],
+                    bindings: vec![Bindings::default()],
                     meta_result: None,
                     is_error: false,
                 })
@@ -401,7 +401,7 @@ fn match_loop(pattern: &MetaTemplate, src: &tt::Subtree) -> Match {
         sep: None,
         sep_kind: None,
         sep_parsed: None,
-        bindings: smallvec![Bindings::default()],
+        bindings: vec![Bindings::default()],
         is_error: false,
         meta_result: None,
     }];
