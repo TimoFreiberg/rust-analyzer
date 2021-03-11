@@ -408,11 +408,10 @@ fn match_loop(pattern: &MetaTemplate, src: &tt::Subtree) -> Match {
 
     let mut next_items = vec![];
 
+    let mut bb_items = SmallVec::new();
+    let mut eof_items = SmallVec::new();
+    let mut error_items = SmallVec::new();
     loop {
-        let mut bb_items = SmallVec::new();
-        let mut eof_items = SmallVec::new();
-        let mut error_items = SmallVec::new();
-
         stdx::always!(next_items.is_empty());
 
         match_loop_inner(
@@ -513,6 +512,10 @@ fn match_loop(pattern: &MetaTemplate, src: &tt::Subtree) -> Match {
             cur_items.push(item);
         }
         stdx::always!(!cur_items.is_empty());
+
+        bb_items.clear();
+        eof_items.clear();
+        error_items.clear();
     }
 }
 
