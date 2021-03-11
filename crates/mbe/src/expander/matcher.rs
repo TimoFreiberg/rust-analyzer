@@ -218,7 +218,7 @@ fn match_loop_inner<'t>(
     src: TtIter<'t>,
     stack: &[TtIter<'t>],
     res: &mut Match,
-    cur_items: &mut SmallVec<[MatchState<'t>; 1]>,
+    cur_items: &mut Vec<MatchState<'t>>,
     bb_items: &mut SmallVec<[MatchState<'t>; 1]>,
     next_items: &mut Vec<MatchState<'t>>,
     eof_items: &mut SmallVec<[MatchState<'t>; 1]>,
@@ -394,7 +394,7 @@ fn match_loop(pattern: &MetaTemplate, src: &tt::Subtree) -> Match {
     let mut res = Match::default();
     let mut error_reover_item = None;
 
-    let mut cur_items = smallvec![MatchState {
+    let mut cur_items = vec![MatchState {
         dot: pattern.iter_delimited(None),
         stack: Default::default(),
         up: None,
