@@ -171,7 +171,7 @@ struct MatchState<'t> {
     /// When matching against matchers with nested delimited submatchers (e.g., `pat ( pat ( .. )
     /// pat ) pat`), we need to keep track of the matchers we are descending into. This stack does
     /// that where the bottom of the stack is the outermost matcher.
-    stack: SmallVec<[OpDelimitedIter<'t>; 4]>,
+    stack: Vec<OpDelimitedIter<'t>>,
 
     /// The "parent" matcher position if we are in a repetition. That is, the matcher position just
     /// before we enter the repetition.
