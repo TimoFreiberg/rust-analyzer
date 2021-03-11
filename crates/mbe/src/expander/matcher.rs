@@ -221,7 +221,7 @@ fn match_loop_inner<'t>(
     cur_items: &mut Vec<MatchState<'t>>,
     bb_items: &mut SmallVec<[MatchState<'t>; 1]>,
     next_items: &mut Vec<MatchState<'t>>,
-    eof_items: &mut SmallVec<[MatchState<'t>; 1]>,
+    eof_items: &mut Vec<MatchState<'t>>,
     error_items: &mut SmallVec<[MatchState<'t>; 1]>,
 ) {
     macro_rules! try_push {
@@ -409,7 +409,7 @@ fn match_loop(pattern: &MetaTemplate, src: &tt::Subtree) -> Match {
     let mut next_items = vec![];
 
     let mut bb_items = SmallVec::new();
-    let mut eof_items = SmallVec::new();
+    let mut eof_items = Vec::new();
     let mut error_items = SmallVec::new();
     loop {
         stdx::always!(next_items.is_empty());
